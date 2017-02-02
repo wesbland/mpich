@@ -68,6 +68,16 @@ cvars:
       description : >-
         Enables an optimized business card exchange over PMI for node root processes only.
 
+    - name        : MPIR_CVAR_CH4_SHM_POSIX_EAGER
+      category    : CH4
+      type        : string
+      default     : ""
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If non-empty, this cvar specifies which shm posix eager module to use
+
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
 
