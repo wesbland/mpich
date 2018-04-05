@@ -25,28 +25,4 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_finalize()
     return MPI_SUCCESS;
 }
 
-MPL_STATIC_INLINE_PREFIX size_t MPIDI_POSIX_eager_threshold()
-{
-    MPIR_Assert(0);
-    return MPI_SUCCESS;
-}
-
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_connect(int grank)
-{
-    MPIR_Assert(0);
-    return MPI_SUCCESS;
-}
-
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_listen(int *grank)
-{
-    MPIR_Assert(0);
-    return MPI_SUCCESS;
-}
-
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_accept(int grank)
-{
-    MPIR_Assert(0);
-    return MPI_SUCCESS;
-}
-
 #endif /* POSIX_EAGER_STUB_INIT_H_INCLUDED */

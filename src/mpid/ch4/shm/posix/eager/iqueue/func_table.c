@@ -20,12 +20,6 @@ MPIDI_POSIX_eager_funcs_t MPIDI_POSIX_eager_iqueue_funcs = {
     MPIDI_POSIX_eager_init,
     MPIDI_POSIX_eager_finalize,
 
-    MPIDI_POSIX_eager_threshold,
-
-    MPIDI_POSIX_eager_connect,
-    MPIDI_POSIX_eager_listen,
-    MPIDI_POSIX_eager_accept,
-
     MPIDI_POSIX_eager_send,
 
     MPIDI_POSIX_eager_recv_begin,

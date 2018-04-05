@@ -23,26 +23,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_finalize()
     return MPIDI_POSIX_eager_func->finalize();
 }
 
-MPL_STATIC_INLINE_PREFIX size_t MPIDI_POSIX_eager_threshold()
-{
-    return MPIDI_POSIX_eager_func->threshold();
-}
-
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_connect(int grank)
-{
-    return MPIDI_POSIX_eager_func->connect(grank);
-}
-
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_listen(int *grank_p)
-{
-    return MPIDI_POSIX_eager_func->listen(grank_p);
-}
-
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_accept(int grank)
-{
-    return MPIDI_POSIX_eager_func->accept(grank);
-}
-
 MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_send(int grank,
                                                     MPIDI_POSIX_am_header_t ** msg_hdr,
                                                     struct iovec **iov,

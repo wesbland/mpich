@@ -17,12 +17,6 @@
 typedef int (*MPIDI_POSIX_eager_init_t) (int rank, int size);
 typedef int (*MPIDI_POSIX_eager_finalize_t) (void);
 
-typedef size_t(*MPIDI_POSIX_eager_threshold_t) (void);
-
-typedef int (*MPIDI_POSIX_eager_connect_t) (int grank);
-typedef int (*MPIDI_POSIX_eager_listen_t) (int *grank);
-typedef int (*MPIDI_POSIX_eager_accept_t) (int grank);
-
 typedef int (*MPIDI_POSIX_eager_send_t) (int grank,
                                          MPIDI_POSIX_am_header_t ** msg_hdr,
                                          struct iovec ** iov, size_t * iov_num, int is_blocking);
@@ -42,12 +36,6 @@ typedef struct MPIDI_POSIX_eager_funcs {
     MPIDI_POSIX_eager_init_t init;
     MPIDI_POSIX_eager_finalize_t finalize;
 
-    MPIDI_POSIX_eager_threshold_t threshold;
-
-    MPIDI_POSIX_eager_connect_t connect;
-    MPIDI_POSIX_eager_listen_t listen;
-    MPIDI_POSIX_eager_accept_t accept;
-
     MPIDI_POSIX_eager_send_t send;
 
     MPIDI_POSIX_eager_recv_begin_t recv_begin;
@@ -65,12 +53,6 @@ extern char MPIDI_POSIX_eager_strings[][MPIDI_MAX_POSIX_EAGER_STRING_LEN];
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size) MPL_STATIC_INLINE_SUFFIX;
 MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_finalize(void) MPL_STATIC_INLINE_SUFFIX;
-
-MPL_STATIC_INLINE_PREFIX size_t MPIDI_POSIX_eager_threshold(void) MPL_STATIC_INLINE_SUFFIX;
-
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_connect(int grank) MPL_STATIC_INLINE_SUFFIX;
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_listen(int *grank) MPL_STATIC_INLINE_SUFFIX;
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_accept(int grank) MPL_STATIC_INLINE_SUFFIX;
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_send(int grank,
                                                     MPIDI_POSIX_am_header_t ** msg_hdr,
