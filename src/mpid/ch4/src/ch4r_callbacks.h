@@ -298,8 +298,19 @@ static inline int MPIDI_recv_target_cmpl_cb(MPIR_Request * rreq)
 #ifndef MPIDI_CH4_DIRECT_NETMOD
     if (MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(rreq)) {
         int continue_matching = 1;
+#ifdef MPIDI_CH4_EXCLUSIVE_SHM
+        if (MPIDI_CH4I_REQUEST(rreq, is_local)) {
+            MPIDI_CH4R_anysource_matched(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(rreq), MPIDI_CH4R_SHM,
+                                         &continue_matching);
+        } else {
+            MPIDI_CH4R_anysource_matched(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(rreq),
+                                         MPIDI_CH4R_NETMOD, &continue_matching);
+        }
+#else /* MPIDI_CH4_EXCLUSIVE_SHM */
         MPIDI_CH4R_anysource_matched(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(rreq), MPIDI_CH4R_NETMOD,
                                      &continue_matching);
+#endif /* MPIDI_CH4_EXCLUSIVE_SHM */
+
         if (unlikely(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(rreq))) {
             MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(rreq)) = NULL;
             MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(rreq) = NULL;

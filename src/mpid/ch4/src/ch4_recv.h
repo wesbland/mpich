@@ -57,14 +57,15 @@ MPL_STATIC_INLINE_PREFIX int MPID_Recv(void *buf,
             MPIR_ERR_POP(mpi_errno);
         }
 
-        mpi_errno = MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, av,
-                                       &(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)));
+        if (!MPIR_Request_is_complete(*request)) {
+            mpi_errno = MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset,
+                                           av, &(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)));
 
-        if (mpi_errno != MPI_SUCCESS) {
-            MPIR_ERR_POP(mpi_errno);
-        }
-        /* cancel the shm request if netmod/am handles the request from unexpected queue. */
-        else if (*request) {
+            if (mpi_errno != MPI_SUCCESS) {
+                MPIR_ERR_POP(mpi_errno);
+            }
+
+            /* cancel the shm request if netmod/am handles the request from unexpected queue. */
             if (MPIR_Request_is_complete(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request))) {
                 mpi_errno = MPIDI_SHM_mpi_cancel_recv(*request);
                 if (MPIR_STATUS_GET_CANCEL_BIT((*request)->status)) {
@@ -73,12 +74,12 @@ MPL_STATIC_INLINE_PREFIX int MPID_Recv(void *buf,
                 MPIR_Request_free(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request));
                 goto fn_exit;
             }
+
             MPIDI_CH4I_REQUEST(*request, is_local) = 1;
             MPIDI_CH4I_REQUEST(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request), is_local) = 0;
+            MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)) =
+                *request;
         }
-
-        MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)) =
-            *request;
     } else {
         int r;
         if ((r = MPIDI_av_is_local(av)))
@@ -136,19 +137,30 @@ MPL_STATIC_INLINE_PREFIX int MPID_Recv_init(void *buf,
             MPIR_ERR_POP(mpi_errno);
         }
 
-        mpi_errno =
-            MPIDI_NM_mpi_recv_init(buf, count, datatype, rank, tag, comm, context_offset, av,
-                                   &(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)));
+        if (!MPIR_Request_is_complete(*request)) {
+            mpi_errno =
+                MPIDI_NM_mpi_recv_init(buf, count, datatype, rank, tag, comm, context_offset, av,
+                                       &(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)));
 
-        if (mpi_errno != MPI_SUCCESS) {
-            MPIR_ERR_POP(mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) {
+                MPIR_ERR_POP(mpi_errno);
+            }
+
+            /* cancel the shm request if netmod/am handles the request from unexpected queue. */
+            if (MPIR_Request_is_complete(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request))) {
+                mpi_errno = MPIDI_SHM_mpi_cancel_recv(*request);
+                if (MPIR_STATUS_GET_CANCEL_BIT((*request)->status)) {
+                    (*request)->status = MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)->status;
+                }
+                MPIR_Request_free(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request));
+                goto fn_exit;
+            }
+
+            MPIDI_CH4I_REQUEST(*request, is_local) = 1;
+            MPIDI_CH4I_REQUEST(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request), is_local) = 0;
+            MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)) =
+                *request;
         }
-
-        MPIDI_CH4I_REQUEST(*request, is_local) = 1;
-        MPIDI_CH4I_REQUEST(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request), is_local) = 0;
-
-        MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)) =
-            *request;
     } else {
         int r;
         if ((r = MPIDI_av_is_local(av)))
@@ -305,18 +317,29 @@ MPL_STATIC_INLINE_PREFIX int MPID_Irecv(void *buf,
             MPIR_ERR_POP(mpi_errno);
         }
 
-        mpi_errno = MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, av,
-                                       &(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)));
+        if (!MPIR_Request_is_complete(*request)) {
+            mpi_errno = MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset,
+                                           av, &(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)));
 
-        if (mpi_errno != MPI_SUCCESS) {
-            MPIR_ERR_POP(mpi_errno);
-        } else if (*request) {
+            if (mpi_errno != MPI_SUCCESS) {
+                MPIR_ERR_POP(mpi_errno);
+            }
+
+            /* cancel the shm request if netmod/am handles the request from unexpected queue. */
+            if (MPIR_Request_is_complete(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request))) {
+                mpi_errno = MPIDI_SHM_mpi_cancel_recv(*request);
+                if (MPIR_STATUS_GET_CANCEL_BIT((*request)->status)) {
+                    (*request)->status = MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)->status;
+                }
+                MPIR_Request_free(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request));
+                goto fn_exit;
+            }
+
             MPIDI_CH4I_REQUEST(*request, is_local) = 1;
             MPIDI_CH4I_REQUEST(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request), is_local) = 0;
+            MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)) =
+                *request;
         }
-
-        MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(MPIDI_CH4I_REQUEST_ANYSOURCE_PARTNER(*request)) =
-            *request;
     } else {
         int r;
         if ((r = MPIDI_av_is_local(av)))
