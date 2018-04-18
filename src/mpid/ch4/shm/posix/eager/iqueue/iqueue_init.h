@@ -32,10 +32,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size)
     transport = MPIDI_POSIX_EAGER_IQUEUE_get_transport();
 
     MPIR_CHKPMEM_MALLOC(local_procs, int *, size * sizeof(int), mpi_errno,
-                        "local process index array");
+                        "local process index array", MPL_MEM_SHM);
 
     MPIR_CHKPMEM_MALLOC(local_ranks, int *, size * sizeof(int), mpi_errno,
-                        "mem_region local ranks");
+                        "mem_region local ranks", MPL_MEM_SHM);
 
     num_local = 0;
     local_rank = -1;
@@ -70,13 +70,16 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size)
 
     size_of_shared_memory = size_of_terminals + size_of_cells;
 
-    mpi_errno = MPIDU_shm_seg_alloc(size_of_shared_memory, &transport->pointer_to_shared_memory);
+    mpi_errno = MPIDU_shm_seg_alloc(size_of_shared_memory,
+                                    &transport->pointer_to_shared_memory,
+                                    MPL_MEM_SHM);
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
     }
 
     mpi_errno = MPIDU_shm_seg_commit(&transport->memory, &transport->barrier,
-                                     num_local, local_rank, local_rank_0, rank);
+                                     num_local, local_rank, local_rank_0, rank,
+                                     MPL_MEM_SHM);
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
     }
