@@ -128,7 +128,7 @@ static inline int MPIDI_do_irecv(void *buf,
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_DO_IRECV);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_DO_IRECV);
 
-    root_comm = MPIDI_CH4U_context_id_to_comm(comm->recvcontext_id);
+    root_comm = MPIDI_CH4U_context_id_to_comm(context_id);
     unexp_req = MPIDI_CH4U_dequeue_unexp(rank, tag, context_id,
                                          &MPIDI_CH4U_COMM(root_comm, unexp_list));
 
