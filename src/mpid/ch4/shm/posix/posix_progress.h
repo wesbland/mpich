@@ -66,7 +66,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
                                                            &p_data_sz,
                                                            &is_contig, &target_cmpl_cb, &rreq);
         POSIX_TRACE("POSIX AM target callback: handler_id = %d, am_hdr = %p, p_data = %p "
-                    "p_data_sz = %llu, is_contig = %d, target_cmpl_cb = %p rreq = %p\n",
+                    "p_data_sz = %lu, is_contig = %d, target_cmpl_cb = %p rreq = %p\n",
                     msg_hdr->handler_id, am_hdr, p_data, p_data_sz, is_contig, target_cmpl_cb,
                     rreq);
         payload += msg_hdr->am_hdr_sz;
@@ -190,7 +190,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
                                           curr_rreq_hdr->iov_ptr[i].iov_base, payload,
                                           payload_left);
 
-            curr_rreq_hdr->iov_ptr[i].iov_base += payload_left;
+            curr_rreq_hdr->iov_ptr[i].iov_base =
+                (char *) curr_rreq_hdr->iov_ptr[i].iov_base + payload_left;
             curr_rreq_hdr->iov_ptr[i].iov_len -= payload_left;
 
             curr_rreq_hdr->in_total_data_sz -= payload_left;
