@@ -67,6 +67,9 @@ static inline int MPIDI_POSIX_am_init_request(const void *am_hdr,
 
         req_hdr->am_hdr = (void *) &req_hdr->am_hdr_buf[0];
         req_hdr->am_hdr_sz = MPIDI_POSIX_MAX_AM_HDR_SIZE;
+
+        req_hdr->pack_buffer = NULL;
+
     } else {
         req_hdr = MPIDI_POSIX_AMREQUEST(sreq, req_hdr);
     }
