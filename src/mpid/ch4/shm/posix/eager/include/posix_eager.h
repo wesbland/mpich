@@ -32,7 +32,7 @@ typedef void (*MPIDI_POSIX_eager_recv_commit_t) (MPIDI_POSIX_eager_recv_transact
 typedef void (*MPIDI_POSIX_eager_recv_posted_hook_t) (int grank);
 typedef void (*MPIDI_POSIX_eager_recv_completed_hook_t) (int grank);
 
-typedef struct MPIDI_POSIX_eager_funcs {
+typedef struct {
     MPIDI_POSIX_eager_init_t init;
     MPIDI_POSIX_eager_finalize_t finalize;
 
