@@ -157,6 +157,7 @@ static inline int MPIDI_handle_unexp_cmpl(MPIR_Request * rreq)
                         }
                         if (!MPIR_STATUS_GET_CANCEL_BIT(anysource_partner->status)) {
                             anysource_partner = NULL;
+                            MPIR_Comm_release(root_comm);       /* -1 for posted_list */
                             continue;
                         }
                     }
@@ -464,6 +465,7 @@ static inline int MPIDI_send_target_msg_cb(int handler_id, void *am_hdr,
                     }
                     if (!MPIR_STATUS_GET_CANCEL_BIT(anysource_partner->status)) {
                         anysource_partner = NULL;
+                        MPIR_Comm_release(root_comm);   /* -1 for posted_list */
                         continue;
                     }
                 }
@@ -574,6 +576,7 @@ static inline int MPIDI_send_long_req_target_msg_cb(int handler_id, void *am_hdr
                     }
                     if (!MPIR_STATUS_GET_CANCEL_BIT(anysource_partner->status)) {
                         anysource_partner = NULL;
+                        MPIR_Comm_release(root_comm);   /* -1 for posted_list */
                         continue;
                     }
                 }
