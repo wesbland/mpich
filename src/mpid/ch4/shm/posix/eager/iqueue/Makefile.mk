@@ -14,7 +14,8 @@ if BUILD_SHM_POSIX
 
 noinst_HEADERS += src/mpid/ch4/shm/posix/eager/iqueue/iqueue_init.h \
                   src/mpid/ch4/shm/posix/eager/iqueue/iqueue_send.h \
-                  src/mpid/ch4/shm/posix/eager/iqueue/iqueue_recv.h
+                  src/mpid/ch4/shm/posix/eager/iqueue/iqueue_recv.h \
+                  src/mpid/ch4/shm/posix/eager/iqueue/posix_eager_inline.h
 
 mpi_core_sources += src/mpid/ch4/shm/posix/eager/iqueue/globals.c \
                     src/mpid/ch4/shm/posix/eager/iqueue/func_table.c

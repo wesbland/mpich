@@ -8,13 +8,13 @@
  *  Contributor License Agreement dated February 8, 2012.
  */
 
-#ifndef POSIX_EAGER_DIRECT
+#ifndef POSIX_EAGER_INLINE
 #define POSIX_EAGER_DISABLE_INLINES
 
 #include <mpidimpl.h>
 #include <posix_eager.h>
 #include "../../posix_types.h"
-#include "posix_eager_direct.h"
+#include "posix_eager_inline.h"
 
 MPIDI_POSIX_eager_funcs_t MPIDI_POSIX_eager_fbox_funcs = {
     MPIDI_POSIX_eager_init,
@@ -30,4 +30,4 @@ MPIDI_POSIX_eager_funcs_t MPIDI_POSIX_eager_fbox_funcs = {
     MPIDI_POSIX_eager_recv_completed_hook
 };
 
-#endif /* POSIX_EAGER_DIRECT */
+#endif /* POSIX_EAGER_INLINE */

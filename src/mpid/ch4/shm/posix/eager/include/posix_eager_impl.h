@@ -10,7 +10,7 @@
 #ifndef POSIX_EAGER_IMPL_H_INCLUDED
 #define POSIX_EAGER_IMPL_H_INCLUDED
 
-#ifndef POSIX_EAGER_DIRECT
+#ifndef POSIX_EAGER_INLINE
 #ifndef POSIX_EAGER_DISABLE_INLINES
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size)
@@ -62,22 +62,22 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_POSIX_eager_recv_completed_hook(int grank)
 
 #endif /* POSIX_EAGER_DISABLE_INLINES  */
 
-#else /* POSIX_EAGER_DIRECT */
+#else /* POSIX_EAGER_INLINE */
 
-#define __posix_eager_direct_stub__  0
-#define __posix_eager_direct_fbox__  1
-#define __posix_eager_direct_iqueue__  2
+#define __posix_eager_inline_stub__  0
+#define __posix_eager_inline_fbox__  1
+#define __posix_eager_inline_iqueue__  2
 
-#if POSIX_EAGER_DIRECT==__posix_eager_direct_stub__
-#include "../stub/posix_eager_direct.h"
-#elif POSIX_EAGER_DIRECT==__posix_eager_direct_fbox__
-#include "../fbox/posix_eager_direct.h"
-#elif POSIX_EAGER_DIRECT==__posix_eager_direct_iqueue__
-#include "../iqueue/posix_eager_direct.h"
+#if POSIX_EAGER_INLINE==__posix_eager_inline_stub__
+#include "../stub/posix_eager_inline.h"
+#elif POSIX_EAGER_INLINE==__posix_eager_inline_fbox__
+#include "../fbox/posix_eager_inline.h"
+#elif POSIX_EAGER_INLINE==__posix_eager_inline_iqueue__
+#include "../iqueue/posix_eager_inline.h"
 #else
 #error "No direct posix eager included"
 #endif
 
-#endif /* POSIX_EAGER_DIRECT */
+#endif /* POSIX_EAGER_INLINE */
 
 #endif /* POSIX_EAGER_IMPL_H_INCLUDED */

@@ -14,7 +14,8 @@ if BUILD_SHM_POSIX
 
 noinst_HEADERS += src/mpid/ch4/shm/posix/eager/fbox/fbox_init.h \
                   src/mpid/ch4/shm/posix/eager/fbox/fbox_send.h \
-                  src/mpid/ch4/shm/posix/eager/fbox/fbox_recv.h
+                  src/mpid/ch4/shm/posix/eager/fbox/fbox_recv.h \
+                  src/mpid/ch4/shm/posix/eager/fbox/posix_eager_inline.h
 
 mpi_core_sources += src/mpid/ch4/shm/posix/eager/fbox/globals.c \
                     src/mpid/ch4/shm/posix/eager/fbox/func_table.c

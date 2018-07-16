@@ -99,7 +99,7 @@ MPIDI_POSIX_eager_${posix_eager}_recv_transaction_t ${posix_eager};"
     AC_SUBST(ch4_posix_eager_recv_transaction_decl)
 
     if test "$ch4_posix_eager_array_sz" = "1" ;  then
-        PAC_APPEND_FLAG([-DPOSIX_EAGER_DIRECT=__posix_eager_direct_${ch4_posix_eager_modules}__], [CPPFLAGS])
+        PAC_APPEND_FLAG([-DPOSIX_EAGER_INLINE=__posix_eager_inline_${ch4_posix_eager_modules}__], [CPPFLAGS])
     fi
 
     AC_CONFIG_FILES([
