@@ -11,7 +11,6 @@
 
 #include "posix_impl.h"
 #include "posix_types.h"
-#include "posix_eager.h"
 
 MPIDI_POSIX_global_t MPIDI_POSIX_global = { 0 };
 

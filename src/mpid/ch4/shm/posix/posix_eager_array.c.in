@@ -11,8 +11,6 @@
 
 #include <mpidimpl.h>
 
-#include "posix_eager.h"
-
 /* *INDENT-OFF* */
 /* forward declaration of funcs structs defined in network modules */
 extern MPIDI_POSIX_eager_funcs_t @ch4_posix_eager_func_decl@;

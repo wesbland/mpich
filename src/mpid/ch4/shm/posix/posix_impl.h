@@ -15,6 +15,8 @@
 #include "mpidch4r.h"
 
 #include "posix_types.h"
+#include "posix_eager.h"
+#include "posix_eager_impl.h"
 
 #undef FUNCNAME
 #define FUNCNAME nothing
