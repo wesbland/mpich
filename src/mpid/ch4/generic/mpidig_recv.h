@@ -417,7 +417,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_cancel_recv(MPIR_Request * rreq)
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_MPI_CANCEL_RECV);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_MPI_CANCEL_RECV);
 
-    if (!MPIDI_CH4U_REQUEST_IN_PROGRESS(rreq) && !MPIR_STATUS_GET_CANCEL_BIT(rreq->status)) {
+    if (!MPIR_Request_is_complete(rreq) &&
+        !MPIR_STATUS_GET_CANCEL_BIT(rreq->status) && !MPIDI_CH4U_REQUEST_IN_PROGRESS(rreq)) {
         root_comm = MPIDI_CH4U_context_id_to_comm(MPIDI_CH4U_REQUEST(rreq, context_id));
 
         /* MPIDI_CS_ENTER(); */
