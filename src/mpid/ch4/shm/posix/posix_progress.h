@@ -225,11 +225,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
 
         MPIDI_POSIX_global.active_rreq[transaction.src_grank] = NULL;
 
+        MPIDI_POSIX_am_clear_request(rreq);
+
         if (curr_rreq_hdr->cmpl_handler_fn) {
             curr_rreq_hdr->cmpl_handler_fn(rreq);
         }
-
-        MPIDI_POSIX_am_clear_request(rreq);
     }
 
     MPIDI_POSIX_eager_recv_commit(&transaction);
