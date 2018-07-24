@@ -183,6 +183,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
         curr_rreq_hdr = MPIDI_POSIX_AMREQUEST(rreq, req_hdr);
     }
 
+    curr_rreq_hdr->in_total_data_sz -= payload_left;
+
     /* Generic handling for contig and non contig data */
     for (i = 0; i < curr_rreq_hdr->iov_num; i++) {
         if (payload_left < curr_rreq_hdr->iov_ptr[i].iov_len) {
@@ -194,10 +196,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
                 (char *) curr_rreq_hdr->iov_ptr[i].iov_base + payload_left;
             curr_rreq_hdr->iov_ptr[i].iov_len -= payload_left;
 
-            curr_rreq_hdr->in_total_data_sz -= payload_left;
-
-            payload_left = 0;
-
             break;
         }
 
@@ -208,16 +206,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
         payload += curr_rreq_hdr->iov_ptr[i].iov_len;
         payload_left -= curr_rreq_hdr->iov_ptr[i].iov_len;
 
-        curr_rreq_hdr->in_total_data_sz -= curr_rreq_hdr->iov_ptr[i].iov_len;
-
         iov_done++;
     }
 
     if (curr_rreq_hdr->iov_num) {
         curr_rreq_hdr->iov_num -= iov_done;
         curr_rreq_hdr->iov_ptr += iov_done;
-    } else {
-        curr_rreq_hdr->in_total_data_sz -= payload_left;
     }
 
     if (curr_rreq_hdr->in_total_data_sz == 0) {
