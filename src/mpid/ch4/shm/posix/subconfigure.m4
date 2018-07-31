@@ -87,7 +87,7 @@ MPIDI_POSIX_eager_${posix_eager}_recv_transaction_t ${posix_eager};"
 
     ch4_posix_eager_array_sz=$posix_eager_index
 
-    echo "There are $ch4_posix_eager_array_sz POSIX eager modules"
+    echo "There are $ch4_posix_eager_array_sz POSIX eager modules (${ch4_posix_eager_modules})"
 
     AC_SUBST(ch4_posix_eager_modules)
     AC_SUBST(ch4_posix_eager_array)
