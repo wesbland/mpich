@@ -52,7 +52,8 @@ static inline MPIDI_POSIX_EAGER_IQUEUE_cell_t
     terminal = &transport->terminals[transport->local_rank];
 
     if (terminal->head) {
-        uintptr_t head = (uintptr_t) OPA_swap_ptr((OPA_ptr_t *) & terminal->head, NULL);
+        uintptr_t head =
+            (uintptr_t) (unsigned int *) OPA_swap_ptr((OPA_ptr_t *) & terminal->head, NULL);
 
         cell = MPIDI_POSIX_EAGER_IQUEUE_GET_CELL(transport, head);
 

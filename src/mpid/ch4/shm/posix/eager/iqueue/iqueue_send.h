@@ -66,7 +66,7 @@ MPIDI_POSIX_eager_send(int grank,
             if (unlikely(available < (*iov)[i].iov_len)) {
                 memcpy(payload, (*iov)[i].iov_base, available);
 
-                (*iov)[i].iov_base += available;
+                (*iov)[i].iov_base = (char *) (*iov)[i].iov_base + available;
                 (*iov)[i].iov_len -= available;
 
                 available = 0;
@@ -88,7 +88,7 @@ MPIDI_POSIX_eager_send(int grank,
             prev = terminal->head;
             cell->prev = prev;
             OPA_compiler_barrier();
-        } while (((uintptr_t)
+        } while (((uintptr_t) (unsigned int *)
                   OPA_cas_ptr((OPA_ptr_t *) & terminal->head, (void *) prev,
                               (void *) handle) != prev));
 
