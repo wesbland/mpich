@@ -867,7 +867,7 @@ static inline int MPIDI_CH4R_win_finalize(MPIR_Win ** win_ptr)
             /* destroy shared window memory */
             mpi_errno = MPIDI_CH4U_destroy_shm_segment(MPIDI_CH4U_WIN(win, mmap_sz),
                                                        &MPIDI_CH4U_WIN(win, shm_segment_handle),
-                                                       &MPIDI_CH4U_WIN(win, mmap_addr));
+                                                       (char **) &MPIDI_CH4U_WIN(win, mmap_addr));
             if (mpi_errno)
                 MPIR_ERR_POP(mpi_errno);
         }
