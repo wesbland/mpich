@@ -1035,14 +1035,14 @@ static inline int MPIDI_CH4U_allocate_shm_segment(MPIR_Comm * shm_comm_ptr,
 #define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIDI_CH4U_destroy_shm_segment(MPI_Aint shm_segment_len,
                                                  MPL_shm_hnd_t * shm_segment_hdl_ptr,
-                                                 void **base_ptr)
+                                                 char **base_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH4R_DESTROY_SHM_SEGMENT);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH4R_DESTROY_SHM_SEGMENT);
 
-    mpi_errno = MPL_shm_seg_detach(*shm_segment_hdl_ptr, (char **) base_ptr, shm_segment_len);
+    mpi_errno = MPL_shm_seg_detach(*shm_segment_hdl_ptr, base_ptr, shm_segment_len);
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
