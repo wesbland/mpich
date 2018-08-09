@@ -326,9 +326,59 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_send_hdr(int rank,
     msg_hdr.am_hdr_sz = am_hdr_sz;
     msg_hdr.data_sz = 0;
 
-    result = MPIDI_POSIX_eager_send(grank, &msg_hdr_p, &iov_left_ptr, &iov_num_left, 1);
+    if (unlikely(MPIDI_POSIX_global.postponed_queue)) {
+        goto enqueue_request;
+    }
 
-    mpi_errno = (result == MPIDI_POSIX_OK) ? MPI_SUCCESS : MPI_ERR_OTHER;
+    POSIX_TRACE("Direct OUT HDR [ POSIX AM HDR [handler_id %" PRIu64 ", am_hdr_sz %" PRIu64
+                ", data_sz %" PRIu64 ", seq_num = %d]] to %d\n",
+                (uint64_t) msg_hdr_p->handler_id,
+                (uint64_t) msg_hdr_p->am_hdr_sz, (uint64_t) msg_hdr_p->data_sz,
+#ifdef POSIX_AM_DEBUG
+                msg_hdr_p->seq_num,
+#else /* POSIX_AM_DEBUG */
+                -1,
+#endif /* POSIX_AM_DEBUG */
+                grank);
+
+    result = MPIDI_POSIX_eager_send(grank, &msg_hdr_p, &iov_left_ptr, &iov_num_left, 0);
+    if (unlikely((MPIDI_POSIX_NOK == result) || iov_num_left)) {
+        goto enqueue_request;
+    }
+
+  fn_exit:
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_POSIX_AM_SEND_HDR);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+
+  enqueue_request:
+
+    POSIX_TRACE("%s enqueue send request\n", __func__);
+
+    /* Prepare private storage */
+    MPIDI_POSIX_am_request_header_t *curr_sreq_hdr = NULL;
+    mpi_errno = MPIDI_POSIX_am_init_req_hdr(am_hdr, am_hdr_sz, &curr_sreq_hdr, NULL);
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+    curr_sreq_hdr->handler_id = handler_id;
+    curr_sreq_hdr->dst_grank = grank;
+    curr_sreq_hdr->msg_hdr = NULL;
+
+    /* Header hasn't been sent so we should copy it from stack */
+    curr_sreq_hdr->msg_hdr = &curr_sreq_hdr->msg_hdr_buf;
+    curr_sreq_hdr->msg_hdr_buf = msg_hdr;
+
+    curr_sreq_hdr->iov_num = iov_num_left;
+    curr_sreq_hdr->iov_ptr = curr_sreq_hdr->iov;
+    curr_sreq_hdr->iov[0].iov_base = curr_sreq_hdr->am_hdr;
+    curr_sreq_hdr->iov[0].iov_len = curr_sreq_hdr->am_hdr_sz;
+
+    curr_sreq_hdr->request = (uint64_t) 0;
+    DL_APPEND(MPIDI_POSIX_global.postponed_queue, curr_sreq_hdr);
+
+    goto fn_exit;
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_POSIX_AM_SEND_HDR);
     return mpi_errno;

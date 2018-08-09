@@ -235,15 +235,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
 
     if (MPIDI_POSIX_global.postponed_queue) {
         /* Drain postponed queue */
-
-        /* Get data from request */
-
-        MPIR_Request *sreq = (MPIR_Request *) (MPIDI_POSIX_global.postponed_queue->request);
-
-        MPIDI_POSIX_am_request_header_t *curr_sreq_hdr = MPIDI_POSIX_AMREQUEST(sreq, req_hdr);
+        MPIR_Request *sreq = NULL;
+        MPIDI_POSIX_am_request_header_t *curr_sreq_hdr = MPIDI_POSIX_global.postponed_queue;
 
         POSIX_TRACE("Queue OUT HDR [ POSIX AM [handler_id %" PRIu64 ", am_hdr_sz %" PRIu64
-                    ", data_sz %" PRIu64 ", seq_num = %d], " "tag = %d, src_rank = %d ] to %d\n",
+                    ", data_sz %" PRIu64 ", seq_num = %d], request=0x%lx] to %d\n",
                     curr_sreq_hdr->msg_hdr ? curr_sreq_hdr->msg_hdr->handler_id : (uint64_t) - 1,
                     curr_sreq_hdr->msg_hdr ? curr_sreq_hdr->msg_hdr->am_hdr_sz : (uint64_t) - 1,
                     curr_sreq_hdr->msg_hdr ? curr_sreq_hdr->msg_hdr->data_sz : (uint64_t) - 1,
@@ -252,9 +248,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
 #else /* POSIX_AM_DEBUG */
                     -1,
 #endif /* POSIX_AM_DEBUG */
-                    ((MPIDI_CH4U_hdr_t *) curr_sreq_hdr->am_hdr)->tag,
-                    ((MPIDI_CH4U_hdr_t *) curr_sreq_hdr->am_hdr)->src_rank,
-                    curr_sreq_hdr->dst_grank);
+                    curr_sreq_hdr->request, curr_sreq_hdr->dst_grank);
 
         result = MPIDI_POSIX_eager_send(curr_sreq_hdr->dst_grank,
                                         &curr_sreq_hdr->msg_hdr,
@@ -268,15 +262,21 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
 
         DL_DELETE(MPIDI_POSIX_global.postponed_queue, curr_sreq_hdr);
 
-        /* Request has been completed */
+        /* Request has been completed.
+         * If associated with a device-layer sreq, call origin callback and cleanup.
+         * Otherwise this is a POSIX internal queued sreq_hdr, simply release. */
+        if (curr_sreq_hdr->request) {
+            sreq = (MPIR_Request *) curr_sreq_hdr->request;
 
-        if (MPIDI_POSIX_AMREQUEST_HDR(sreq, pack_buffer)) {
-            MPL_free(MPIDI_POSIX_AMREQUEST_HDR(sreq, pack_buffer));
-            MPIDI_POSIX_AMREQUEST_HDR(sreq, pack_buffer) = NULL;
+            if (MPIDI_POSIX_AMREQUEST_HDR(sreq, pack_buffer)) {
+                MPL_free(MPIDI_POSIX_AMREQUEST_HDR(sreq, pack_buffer));
+                MPIDI_POSIX_AMREQUEST_HDR(sreq, pack_buffer) = NULL;
+            }
+
+            MPIDIG_global.origin_cbs[curr_sreq_hdr->handler_id] (sreq);
+        } else {
+            MPIDI_POSIX_am_release_req_hdr(&curr_sreq_hdr);
         }
-
-        MPIDIG_global.origin_cbs[curr_sreq_hdr->handler_id] (sreq);
-
         goto fn_exit;
     }
 
