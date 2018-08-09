@@ -121,7 +121,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
 
             /* Allocate aux data */
 
-            MPIDI_POSIX_am_init_request(NULL, 0, rreq);
+            MPIDI_POSIX_am_init_req_hdr(NULL, 0, &MPIDI_POSIX_AMREQUEST(rreq, req_hdr), rreq);
 
             /* Set active recv request */
 

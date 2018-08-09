@@ -79,8 +79,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
         MPIDI_POSIX_AMREQUEST(sreq, req_hdr) = NULL;
 
         /* Prepare private storage */
-
-        mpi_errno = MPIDI_POSIX_am_init_request(am_hdr, am_hdr_sz, sreq);
+        mpi_errno = MPIDI_POSIX_am_init_req_hdr(am_hdr, am_hdr_sz,
+                                                &MPIDI_POSIX_AMREQUEST(sreq, req_hdr), sreq);
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
 
@@ -156,7 +156,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
     if (!curr_sreq_hdr) {
         /* Prepare private storage */
 
-        mpi_errno = MPIDI_POSIX_am_init_request(am_hdr, am_hdr_sz, sreq);
+        mpi_errno = MPIDI_POSIX_am_init_req_hdr(am_hdr, am_hdr_sz,
+                                                &MPIDI_POSIX_AMREQUEST(sreq, req_hdr), sreq);
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
 

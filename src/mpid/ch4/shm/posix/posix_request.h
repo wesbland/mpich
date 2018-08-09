@@ -12,6 +12,7 @@
 #define POSIX_REQUEST_H_INCLUDED
 
 #include "posix_impl.h"
+#include "posix_am_impl.h"
 
 MPL_STATIC_INLINE_PREFIX void MPIDI_POSIX_am_request_init(MPIR_Request * req)
 {
@@ -37,11 +38,7 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_POSIX_am_request_finalize(MPIR_Request * req
 
     POSIX_TRACE("Completed request %d (%d)\n", req->kind, req_hdr->dst_grank);
 
-    if (req_hdr->am_hdr != &req_hdr->am_hdr_buf[0]) {
-        MPL_free(req_hdr->am_hdr);
-    }
-
-    MPIDI_CH4R_release_buf(req_hdr);
+    MPIDI_POSIX_am_release_req_hdr(&req_hdr);
     MPIDI_POSIX_AMREQUEST(req, req_hdr) = NULL;
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_NETMOD_AM_OFI_CLEAR_REQ);
