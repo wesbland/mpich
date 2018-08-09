@@ -193,8 +193,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
         }
     }
 
-    MPIDI_POSIX_AMREQUEST(sreq, request) = (uint64_t) sreq;
-    DL_APPEND(MPIDI_POSIX_global.postponed_queue, MPIDI_POSIX_AMREQUEST_PTR(sreq));
+    curr_sreq_hdr->request = (uint64_t) sreq;
+    DL_APPEND(MPIDI_POSIX_global.postponed_queue, curr_sreq_hdr);
 
     goto fn_exit;
 }

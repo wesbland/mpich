@@ -58,7 +58,7 @@ typedef struct MPIDI_POSIX_am_header_t {
 #endif                          /* POSIX_AM_DEBUG */
 } MPIDI_POSIX_am_header_t;
 
-typedef struct {
+typedef struct MPIDI_POSIX_am_request_header_t {
     void *pack_buffer;
     void *rreq_ptr;
     void *am_hdr;
@@ -85,6 +85,9 @@ typedef struct {
 
     size_t in_total_data_sz;
 
+    /* Structure used with POSIX postponed_queue */
+    uint64_t request;           /* Store address of MPIR_Request* sreq */
+    struct MPIDI_POSIX_am_request_header_t *prev, *next;
 } MPIDI_POSIX_am_request_header_t;
 
 struct MPIR_Segment;
@@ -106,10 +109,6 @@ typedef struct MPIDI_POSIX_am_request_t {
 #ifdef POSIX_AM_REQUEST_INLINE
     MPIDI_POSIX_am_request_header_t req_hdr_buffer;
 #endif                          /* POSIX_AM_REQUEST_INLINE */
-
-    /* Structure used with POSIX postponed_queue */
-    uint64_t request;           /* Store address of MPIR_Request* sreq */
-    struct MPIDI_POSIX_am_request_t *prev, *next;
 } MPIDI_POSIX_am_request_t;
 
 #define MPIDI_POSIX_EAGER_RECV_INITIALIZE_HOOK(request)\
