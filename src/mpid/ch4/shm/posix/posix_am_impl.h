@@ -48,12 +48,15 @@ static inline int MPIDI_POSIX_am_init_req_hdr(const void *am_hdr,
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_POSIX_AM_INIT_REQ_HDR);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_POSIX_AM_INIT_REQ_HDR);
 
+    /* XXX - I don't know why this inline is here. */
 #ifdef POSIX_AM_REQUEST_INLINE
     if (req_hdr == NULL && sreq != NULL) {
         req_hdr = &MPIDI_POSIX_AMREQUEST(sreq, req_hdr_buffer);
     }
 #endif /* POSIX_AM_REQUEST_INLINE */
 
+    /* XXX - Don't understand this yet. Is this putting ballast in the am header because we have to
+     * have something there? */
     if (req_hdr == NULL) {
         req_hdr = (MPIDI_POSIX_am_request_header_t *)
             MPIDI_CH4R_get_buf(MPIDI_POSIX_global.am_buf_pool);
@@ -66,6 +69,8 @@ static inline int MPIDI_POSIX_am_init_req_hdr(const void *am_hdr,
 
     }
 
+    /* If the header is larger than what we'd preallocated, get rid of the preallocated buffer and
+     * create a new one of the correct size. */
     if (am_hdr_sz > req_hdr->am_hdr_sz) {
         if (req_hdr->am_hdr != &req_hdr->am_hdr_buf[0])
             MPL_free(req_hdr->am_hdr);

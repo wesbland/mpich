@@ -37,6 +37,7 @@ cvars:
 #define FUNCNAME MPIDI_choose_posix_eager
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
+/* XXX - Should this function live in the eager subdirectory somewhere? */
 MPL_STATIC_INLINE_PREFIX int MPIDI_choose_posix_eager(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -95,6 +96,7 @@ static inline int MPIDI_POSIX_mpi_init_hook(int rank, int size, int *n_vnis_prov
 
     *n_vnis_provided = 1;
 
+    /* This is used to track messages that the eager submodule was not ready to send. */
     MPIDI_POSIX_global.postponed_queue = NULL;
 
     MPIR_CHKPMEM_MALLOC(MPIDI_POSIX_global.active_rreq,
@@ -105,11 +107,14 @@ static inline int MPIDI_POSIX_mpi_init_hook(int rank, int size, int *n_vnis_prov
         MPIDI_POSIX_global.active_rreq[i] = NULL;
     }
 
+    /* XXX - Is the eager submodule never inlined? We might want to do that for certain situations,
+     * for instance, if only one eager submodule is compiled in. */
     MPIDI_choose_posix_eager();
 
     mpi_errno = MPIDI_POSIX_eager_init(rank, size);
 
-    /* There is no restriction on the tag_ub from the posix shmod side */
+    /* There is no restriction on the tag_ub from the posix shmod side so we don't mask any bits off
+     * here. */
     *tag_ub = MPIR_TAG_USABLE_BITS;
 
     MPIR_CHKPMEM_COMMIT();
@@ -188,14 +193,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_get_max_node_id(MPIR_Comm * comm, int *
 MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_get_local_upids(MPIR_Comm * comm,
                                                          size_t ** local_upid_size,
                                                          char **local_upids)
-{
-    MPIR_Assert(0);
-    return MPI_SUCCESS;
-}
-
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_upids_to_lupids(int size,
-                                                         size_t * remote_upid_size,
-                                                         char *remote_upids, int **remote_lupids)
 {
     MPIR_Assert(0);
     return MPI_SUCCESS;

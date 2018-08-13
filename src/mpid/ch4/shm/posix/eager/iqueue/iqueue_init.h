@@ -46,6 +46,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size)
     size_t size_of_shared_memory;
     MPIDI_av_entry_t *av = NULL;
 
+    /* Get the internal data structure to describe the iqueues */
+    /* XXX - Why is this not just a global struct? Why is it abstracted inside this call? Do we ever
+     * need more than one of these? */
     transport = MPIDI_POSIX_EAGER_IQUEUE_get_transport();
 
     MPIR_CHKPMEM_MALLOC(local_procs, int *, size * sizeof(int), mpi_errno,
@@ -54,6 +57,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size)
     MPIR_CHKPMEM_MALLOC(local_ranks, int *, size * sizeof(int), mpi_errno,
                         "mem_region local ranks", MPL_MEM_SHM);
 
+    /* Calculate the number of local ranks and this process's rank among those local ranks. */
     num_local = 0;
     local_rank = -1;
     local_rank_0 = -1;
@@ -80,13 +84,17 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size)
     transport->local_ranks = local_ranks;
     transport->local_procs = local_procs;
 
+    /* Create one terminal for each process with which we will be able to communicate. */
     size_of_terminals = (size_t) transport->num_local * sizeof(MPIDI_POSIX_EAGER_IQUEUE_terminal_t);
 
+    /* Behind each terminal is a series of cells. We have `num_cells` per queue/terminal per
+     * communicating process. */
     size_of_cells = (size_t) transport->num_local * (size_t) transport->num_cells
         * (size_t) transport->size_of_cell;
 
     size_of_shared_memory = size_of_terminals + size_of_cells;
 
+    /* Create the shared memory regions that will be used for the iqueue cells and terminals. */
     mpi_errno = MPIDU_shm_seg_alloc(size_of_shared_memory,
                                     &transport->pointer_to_shared_memory, MPL_MEM_SHM);
     if (mpi_errno) {
@@ -99,23 +107,20 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size)
         MPIR_ERR_POP(mpi_errno);
     }
 
+    /* Set up the appropriate pointers for each of the parts of the queues. */
     transport->terminals =
         (MPIDI_POSIX_EAGER_IQUEUE_terminal_t *) ((char *) transport->pointer_to_shared_memory);
 
     transport->cells = (char *) transport->pointer_to_shared_memory
-        + size_of_terminals
-        +
-        (size_t) transport->local_rank * (size_t) transport->num_cells *
+        + size_of_terminals + (size_t) transport->local_rank * (size_t) transport->num_cells *
         (size_t) transport->size_of_cell;
 
     transport->terminals[transport->local_rank].head = 0;
 
+    /* Do the pointer arithmetic and initialize each of the cell data structures. */
     for (i = 0; i < transport->num_cells; i++) {
-        MPIDI_POSIX_EAGER_IQUEUE_cell_t *cell = (MPIDI_POSIX_EAGER_IQUEUE_cell_t *) ((char *)
-                                                                                     transport->cells
-                                                                                     + (size_t)
-                                                                                     transport->size_of_cell
-                                                                                     * i);
+        MPIDI_POSIX_EAGER_IQUEUE_cell_t *cell = (MPIDI_POSIX_EAGER_IQUEUE_cell_t *)
+            ((char *) transport->cells + (size_t) transport->size_of_cell * i);
         cell->type = MPIDI_POSIX_EAGER_IQUEUE_CELL_TYPE_NULL;
         cell->from = transport->local_rank;
         cell->next = NULL;
@@ -124,7 +129,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size)
     }
 
     /* Run local procs barrier */
-
     mpi_errno = MPIDU_shm_barrier(transport->barrier, num_local);
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
@@ -153,6 +157,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_finalize()
 
     transport = MPIDI_POSIX_EAGER_IQUEUE_get_transport();
 
+    /* Make sure all local processes are ready to destroy the segment together */
     mpi_errno = MPIDU_shm_barrier(transport->barrier, transport->num_local);
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);

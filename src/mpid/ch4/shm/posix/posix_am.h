@@ -61,6 +61,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
     msg_hdr.am_hdr_sz = am_hdr_sz;
     msg_hdr.data_sz = data_sz;
 
+    /* If the data being sent is not contiguous, pack it into a contiguous buffer using the datatype
+     * engine. */
     if (unlikely(!dt_contig)) {
         size_t segment_first;
         MPI_Aint last;
@@ -78,7 +80,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
 
         MPIDI_POSIX_AMREQUEST(sreq, req_hdr) = NULL;
 
-        /* Prepare private storage */
+        /* Prepare private storage with information about the pack buffer. */
         mpi_errno = MPIDI_POSIX_am_init_req_hdr(am_hdr, am_hdr_sz,
                                                 &MPIDI_POSIX_AMREQUEST(sreq, req_hdr), sreq);
         if (mpi_errno)
@@ -107,10 +109,13 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
 
     iov_num_left = 2;
 
+    /* If there's no data to send, the second iov can be empty and doesn't need to be transfered. */
     if (!data || !count) {
         iov_num_left = 1;
     }
 
+    /* If we already have messages in the postponed queue, this one will probably also end up being
+     * queued so save some cycles and do it now. */
     if (unlikely(MPIDI_POSIX_global.postponed_queue)) {
         goto enqueue_request;
     }
@@ -128,12 +133,13 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
 
     result = MPIDI_POSIX_eager_send(grank, &msg_hdr_p, &iov_left_ptr, &iov_num_left, 0);
 
+    /* If the message was not completed, queue it to be sent later. */
     if (unlikely((MPIDI_POSIX_NOK == result) || iov_num_left)) {
         goto enqueue_request;
     }
 
-    /* Request has been completed */
-
+    /* If we made it here, the request has been completed and we can clean up the tracking
+     * information and trigger the appropriate callbacks. */
     if (unlikely(curr_sreq_hdr && curr_sreq_hdr->pack_buffer)) {
         MPL_free(curr_sreq_hdr->pack_buffer);
         curr_sreq_hdr->pack_buffer = NULL;
@@ -153,6 +159,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
 
     POSIX_TRACE("%s enqueue send request\n", __func__);
 
+    /* Check to see if we need to create storage for the data to be sent. We did this above only if
+     * we were sending a noncontiguous message, but we need it for all situations now. */
     if (!curr_sreq_hdr) {
         /* Prepare private storage */
 
@@ -168,9 +176,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
     curr_sreq_hdr->dst_grank = grank;
     curr_sreq_hdr->msg_hdr = NULL;
 
+    /* If this is true, the header hasn't been sent so we should copy it from stack */
     if (msg_hdr_p) {
-        /* Header hasn't been sent so we should copy it from stack */
-
         curr_sreq_hdr->msg_hdr = &curr_sreq_hdr->msg_hdr_buf;
         curr_sreq_hdr->msg_hdr_buf = msg_hdr;
     }
@@ -178,14 +185,13 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
     curr_sreq_hdr->iov_num = iov_num_left;
     curr_sreq_hdr->iov_ptr = curr_sreq_hdr->iov;
 
+    /* If we haven't made it through the header yet, make sure we include it in the iovec */
     if (iov_num_left == 2) {
         curr_sreq_hdr->iov[0].iov_base = curr_sreq_hdr->am_hdr;
         curr_sreq_hdr->iov[0].iov_len = curr_sreq_hdr->am_hdr_sz;
 
         curr_sreq_hdr->iov[1] = iov_left_ptr[1];
-    }
-
-    if (iov_num_left == 1) {
+    } else if (iov_num_left == 1) {
         if (!data || !count) {
             curr_sreq_hdr->iov[0].iov_base = curr_sreq_hdr->am_hdr;
             curr_sreq_hdr->iov[0].iov_len = curr_sreq_hdr->am_hdr_sz;
@@ -195,6 +201,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
     }
 
     curr_sreq_hdr->request = (uint64_t) sreq;
+
     DL_APPEND(MPIDI_POSIX_global.postponed_queue, curr_sreq_hdr);
 
     goto fn_exit;

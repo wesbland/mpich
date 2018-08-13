@@ -13,10 +13,13 @@
 
 #include "iqueue_impl.h"
 
+/* Work backward through the queue to find the first cell and put that one in the transport's
+ * first_cell position. */
 static void MPIDI_POSIX_EAGER_IQUEUE_enqueue_cell(MPIDI_POSIX_EAGER_IQUEUE_transport_t * transport,
                                                   MPIDI_POSIX_EAGER_IQUEUE_cell_t * cell)
 {
     /* Ingress queue of cells is inverted. Thus, we need to re-invert it. */
+    /* XXX - How do we get into a situation where the head is "behind" the tail? */
     if (cell->prev) {
         MPIDI_POSIX_EAGER_IQUEUE_cell_t *prev =
             MPIDI_POSIX_EAGER_IQUEUE_GET_CELL(transport, cell->prev);
@@ -35,9 +38,10 @@ static void MPIDI_POSIX_EAGER_IQUEUE_enqueue_cell(MPIDI_POSIX_EAGER_IQUEUE_trans
 static inline MPIDI_POSIX_EAGER_IQUEUE_cell_t
     * MPIDI_POSIX_EAGER_IQUEUE_receive_cell(MPIDI_POSIX_EAGER_IQUEUE_transport_t * transport)
 {
-    MPIDI_POSIX_EAGER_IQUEUE_cell_t *cell;
+    MPIDI_POSIX_EAGER_IQUEUE_cell_t *cell = NULL;
     MPIDI_POSIX_EAGER_IQUEUE_terminal_t *terminal;
 
+    /* Update the first_cell pointer in the queue if we pull out the first cell */
     if (transport->first_cell) {
         cell = transport->first_cell;
         if (cell->next == NULL) {
@@ -46,32 +50,30 @@ static inline MPIDI_POSIX_EAGER_IQUEUE_cell_t
         } else {
             transport->first_cell = cell->next;
         }
-        return cell;
-    }
+    } else {
+        /* If first_cell wasn't set, grab the next cell from the appropriate terminal */
+        terminal = &transport->terminals[transport->local_rank];
 
-    terminal = &transport->terminals[transport->local_rank];
+        if (terminal->head) {
+            uintptr_t head =
+                (uintptr_t) (unsigned int *) OPA_swap_ptr((OPA_ptr_t *) & terminal->head, NULL);
 
-    if (terminal->head) {
-        uintptr_t head =
-            (uintptr_t) (unsigned int *) OPA_swap_ptr((OPA_ptr_t *) & terminal->head, NULL);
+            cell = MPIDI_POSIX_EAGER_IQUEUE_GET_CELL(transport, head);
 
-        cell = MPIDI_POSIX_EAGER_IQUEUE_GET_CELL(transport, head);
+            /* If the head of the terminal has the prev pointer set, enqueue the current cell and
+             * use that one instead. */
+            if (cell->prev) {
+                MPIDI_POSIX_EAGER_IQUEUE_enqueue_cell(transport, cell);
 
-        if (cell->prev == 0) {
-            return cell;
+                cell = transport->first_cell;
+                MPIR_Assert(cell != NULL);
+                MPIR_Assert(cell->next != NULL);
+                transport->first_cell = cell->next;
+            }
         }
-
-        MPIDI_POSIX_EAGER_IQUEUE_enqueue_cell(transport, cell);
-
-        cell = transport->first_cell;
-        MPIR_Assert(cell != NULL);
-        MPIR_Assert(cell->next != NULL);
-        transport->first_cell = cell->next;
-
-        return cell;
     }
 
-    return NULL;
+    return cell;
 }
 
 
@@ -85,6 +87,7 @@ MPIDI_POSIX_eager_recv_begin(MPIDI_POSIX_eager_recv_transaction_t * transaction)
     MPIDI_POSIX_EAGER_IQUEUE_transport_t *transport;
     MPIDI_POSIX_EAGER_IQUEUE_cell_t *cell;
 
+    /* Get the transport with the global variables */
     transport = MPIDI_POSIX_EAGER_IQUEUE_get_transport();
 
     cell = MPIDI_POSIX_EAGER_IQUEUE_receive_cell(transport);

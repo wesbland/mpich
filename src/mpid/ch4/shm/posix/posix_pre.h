@@ -106,6 +106,8 @@ typedef struct MPIDI_POSIX_am_request_t {
     size_t segment_size;
 
     MPIDI_POSIX_am_request_header_t *req_hdr;
+
+/* XXX - Why is this ifdef here? I don't see it ever being defined. */
 #ifdef POSIX_AM_REQUEST_INLINE
     MPIDI_POSIX_am_request_header_t req_hdr_buffer;
 #endif                          /* POSIX_AM_REQUEST_INLINE */

@@ -22,36 +22,50 @@
 
 typedef struct MPIDI_POSIX_EAGER_IQUEUE_cell MPIDI_POSIX_EAGER_IQUEUE_cell_t;
 
+/* Each cell contains some data being communicated from one process to another. */
 struct MPIDI_POSIX_EAGER_IQUEUE_cell {
-    uint16_t type;
-    uint16_t from;
-    uint32_t payload_size;
-    uintptr_t prev;
-    MPIDI_POSIX_EAGER_IQUEUE_cell_t *next;
-    MPIDI_POSIX_am_header_t am_header;
+    uint16_t type;              /* Type of cell (head/tail/etc.) */
+    uint16_t from;              /* Who is the message in the cell from */
+    uint32_t payload_size;      /* Size of the message in the cell */
+    uintptr_t prev;             /* Internal pointer when finding the previous active cell */
+    MPIDI_POSIX_EAGER_IQUEUE_cell_t *next;      /* Internal pointer when finding the next active cell */
+    MPIDI_POSIX_am_header_t am_header;  /* If this cell is the beginning of a message, it will have
+                                         * an active message header and this will point to it. */
 };
 
+/* The terminal describes each of the iqueues, mostly by tracking where the head of the queue is at
+ * any given time. */
 typedef union {
-    /* head of inverted queue of cells */
-    volatile uintptr_t head;
-    uint8_t pad[MPIDU_SHM_CACHE_LINE_LEN];
+    volatile uintptr_t head;    /* head of inverted queue of cells */
+    uint8_t pad[MPIDU_SHM_CACHE_LINE_LEN];      /* Padding to make sure the terminals are cache
+                                                 * aligned */
 } MPIDI_POSIX_EAGER_IQUEUE_terminal_t;
 
 typedef struct MPIDI_POSIX_EAGER_IQUEUE_transport {
-    MPIDU_shm_seg_t memory;
-    MPIDU_shm_seg_info_t *seg;
-    MPIDU_shm_barrier_t *barrier;
-    int num_local;
-    int num_cells;
-    int size_of_cell;
-    int local_rank;
-    int *local_ranks;
-    int *local_procs;
-    void *pointer_to_shared_memory;
-    void *cells;
-    MPIDI_POSIX_EAGER_IQUEUE_terminal_t *terminals;
-    MPIDI_POSIX_EAGER_IQUEUE_cell_t *first_cell;
-    MPIDI_POSIX_EAGER_IQUEUE_cell_t *last_cell;
+    MPIDU_shm_seg_t memory;     /* Pointer to the shared memory region used by the segment allocator
+                                 * to be used at initialization and freeing time */
+    MPIDU_shm_seg_info_t *seg;  /* Field used for shared memory segment tracking */
+    MPIDU_shm_barrier_t *barrier;       /* Shared memory barrier object used to do local barriers
+                                         * without MPI calls */
+    int num_local;              /* The total number of processes that can communicate using this
+                                 * transport */
+    int num_cells;              /* The number of cells allocated to each terminal in this transport */
+    int size_of_cell;           /* The size of each of the cells in this transport */
+    int local_rank;             /* This process's local rank (the rank in the `local_comm` of
+                                 * MPI_COMM_WORLD) */
+    int *local_ranks;           /* Mapping of local ranks of their MPI_COMM_WORLD ranks */
+    int *local_procs;           /* Mapping of the ranks in MPI_COMM_WORLD to local ranks */
+    void *pointer_to_shared_memory;     /* The entire shared memory region used by both the terminal
+                                         * and the cells in this transport */
+    void *cells;                /* Pointer to the memory containing all of the cells used by this
+                                 * transport */
+    MPIDI_POSIX_EAGER_IQUEUE_terminal_t *terminals;     /* The list of all the terminals that
+                                                         * describe each of the cells */
+    MPIDI_POSIX_EAGER_IQUEUE_cell_t *first_cell;        /* Internal variable to track the first cell
+                                                         * to be received when receiving multiple
+                                                         * cells. */
+    MPIDI_POSIX_EAGER_IQUEUE_cell_t *last_cell; /* Internal variable to track the last cell to be
+                                                 * received when receiving multiple cells. */
 } MPIDI_POSIX_EAGER_IQUEUE_transport_t;
 
 extern MPIDI_POSIX_EAGER_IQUEUE_transport_t MPIDI_POSIX_EAGER_IQUEUE_transport_global;
@@ -70,9 +84,12 @@ static inline MPIDI_POSIX_EAGER_IQUEUE_transport_t *MPIDI_POSIX_EAGER_IQUEUE_get
 #define MPIDI_POSIX_EAGER_IQUEUE_CELL_CAPACITY(transport) \
     ((transport)->size_of_cell - sizeof(MPIDI_POSIX_EAGER_IQUEUE_cell_t))
 
+/* The offset of memory to the beginning of the cell. */
 #define MPIDI_POSIX_EAGER_IQUEUE_GET_HANDLE(transport, cell) \
     ((cell) ? ((uintptr_t)(cell) - (uintptr_t)(transport)->pointer_to_shared_memory) : 0)
 
+/* Grab a specific cell by using the offset value (from the beginning of the memory used to store
+ * all of the cells) of the handle. */
 #define MPIDI_POSIX_EAGER_IQUEUE_GET_CELL(transport, handle) \
     (MPIDI_POSIX_EAGER_IQUEUE_cell_t*)((handle) ? \
         ((char*)(transport)->pointer_to_shared_memory + (uintptr_t)(handle)) : NULL);

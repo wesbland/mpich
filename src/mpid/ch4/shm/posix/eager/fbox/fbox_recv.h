@@ -23,30 +23,33 @@ MPIDI_POSIX_eager_recv_begin(MPIDI_POSIX_eager_recv_transaction_t * transaction)
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_POSIX_FBOX_EAGER_RECV_BEGIN);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_POSIX_FBOX_EAGER_RECV_BEGIN);
 
-    enum { BATCH_SIZE = 4 };
+    enum { BATCH_SIZE = 4 };    /* XXX - Why isn't this a macro? */
     int j, local_rank, grank;
     MPIDI_POSIX_fastbox_t *fbox_in;
     int mpi_errno = MPIDI_POSIX_NOK;
 
+    /* Rather than polling all of the fastboxes on every loop, do a small number and rely on calling
+     * this function again if needed. */
     for (j = 0; j < BATCH_SIZE; j++) {
+
+        /* Find the correct fastbox and update the pointer for the next time around the loop. */
         local_rank = MPIDI_POSIX_eager_fbox_control_global.next_poll_local_rank;
         fbox_in = MPIDI_POSIX_eager_fbox_control_global.mailboxes.in[local_rank];
-
         MPIDI_POSIX_eager_fbox_control_global.next_poll_local_rank =
             (local_rank + 1) % MPIDI_POSIX_eager_fbox_control_global.num_local;
 
+        /* If the flag is set, there is a message waiting. */
         if (fbox_in->flag) {
             /* Initialize public transaction part */
-
             grank = MPIDI_POSIX_eager_fbox_control_global.local_procs[local_rank];
 
             if (likely(fbox_in->is_header)) {
+                /* Only received the header for the message */
                 transaction->msg_hdr = fbox_in->payload;
                 transaction->payload = fbox_in->payload + sizeof(MPIDI_POSIX_am_header_t);
                 transaction->payload_sz = fbox_in->payload_sz - sizeof(MPIDI_POSIX_am_header_t);
             } else {
-                /* We have received a message fragment */
-
+                /* Received a fragment fragment of the message payload */
                 transaction->msg_hdr = NULL;
                 transaction->payload = fbox_in->payload;
                 transaction->payload_sz = fbox_in->payload_sz;
@@ -55,7 +58,6 @@ MPIDI_POSIX_eager_recv_begin(MPIDI_POSIX_eager_recv_transaction_t * transaction)
             transaction->src_grank = grank;
 
             /* Initialize private transaction part */
-
             transaction->transport.fbox.fbox_ptr = fbox_in;
 
 #ifdef POSIX_FBOX_DEBUG
@@ -77,6 +79,7 @@ MPIDI_POSIX_eager_recv_begin(MPIDI_POSIX_eager_recv_transaction_t * transaction)
             }
 #endif /* POSIX_FBOX_DEBUG */
 
+            /* We found a message so return success and stop. */
             mpi_errno = MPIDI_POSIX_OK;
             goto fn_exit;
         }
@@ -97,6 +100,7 @@ MPIDI_POSIX_eager_recv_memcpy(MPIDI_POSIX_eager_recv_transaction_t * transaction
 {
     MPIR_Memcpy(dst, src, size);
 
+    /* XXX - Why is this statement even here? */
     return;
 }
 

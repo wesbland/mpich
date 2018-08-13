@@ -42,12 +42,15 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
     uint8_t *payload;
     size_t payload_left;
 
+    /* Check to see if any new messages are ready for processing from the eager submodule. */
     result = MPIDI_POSIX_eager_recv_begin(&transaction);
 
     if (MPIDI_POSIX_OK != result) {
         goto send_progress;
     }
 
+    /* Process the eager message */
+    /* XXX - Should this not happen in an eager-specific progress engine? */
     msg_hdr = transaction.msg_hdr;
 
     payload = transaction.payload;
@@ -60,6 +63,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
         in_total_data_sz = msg_hdr->data_sz;
         p_data_sz = msg_hdr->data_sz;
 
+        /* Call the MPIDIG function to handle the initial receipt of the message. This will attempt
+         * to match the message (if appropriate) and return a request if the message was matched. */
         MPIDIG_global.target_msg_cbs[msg_hdr->handler_id] (msg_hdr->handler_id,
                                                            am_hdr,
                                                            &p_data,
@@ -73,9 +78,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
         payload += msg_hdr->am_hdr_sz;
         payload_left -= msg_hdr->am_hdr_sz;
 
+        /* We're receiving a new message here. */
         if (rreq) {
+            /* zero message size optimization */
             if ((p_data_sz == 0) && (in_total_data_sz == 0)) {
-                /* zero message size optimization */
 
                 MPIR_STATUS_SET_COUNT(rreq->status, 0);
                 rreq->status.MPI_SOURCE = MPIDI_CH4U_REQUEST(rreq, rank);
@@ -91,8 +97,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
                 goto fn_exit;
             }
 
+            /* Received immediately */
             if (is_contig && (in_total_data_sz == payload_left)) {
-                /* Received immediately */
 
                 if (in_total_data_sz > p_data_sz) {
                     rreq->status.MPI_ERROR = MPI_ERR_TRUNCATE;
@@ -108,6 +114,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
 
                 MPIDI_POSIX_eager_recv_memcpy(&transaction, p_data, payload, recv_data_sz);
 
+                /* Call the function to handle the completed receipt of the message. */
                 if (target_cmpl_cb) {
                     target_cmpl_cb(rreq);
                 }
@@ -122,8 +129,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_progress(int blocking)
             /* Allocate aux data */
 
             MPIDI_POSIX_am_init_req_hdr(NULL, 0, &MPIDI_POSIX_AMREQUEST(rreq, req_hdr), rreq);
-
-            /* Set active recv request */
 
             curr_rreq_hdr = MPIDI_POSIX_AMREQUEST(rreq, req_hdr);
 

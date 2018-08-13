@@ -38,21 +38,34 @@ MPIDI_POSIX_eager_send(int grank,
     MPIDI_POSIX_EAGER_IQUEUE_transport_t *transport;
     MPIDI_POSIX_EAGER_IQUEUE_cell_t *cell;
 
+    /* Get the transport object that holds all of the global variables. */
     transport = MPIDI_POSIX_EAGER_IQUEUE_get_transport();
+
+    /* Try to get a new cell to hold the message */
     cell = MPIDI_POSIX_EAGER_IQUEUE_new_cell(transport);
 
+    /* If a cell was available, use it to send the message. */
     if (likely(cell)) {
         MPIDI_POSIX_EAGER_IQUEUE_terminal_t *terminal;
         size_t i, iov_done, capacity, available;
         uintptr_t prev, handle;
         char *payload;
 
+        /* Find the correct queue for this rank pair. */
         terminal = &transport->terminals[transport->local_ranks[grank]];
+
+        /* Get the offset of the cell in the queue */
         handle = MPIDI_POSIX_EAGER_IQUEUE_GET_HANDLE(transport, cell);
+
+        /* Get the memory allocated to be used for the message transportation. */
         payload = MPIDI_POSIX_EAGER_IQUEUE_CELL_PAYLOAD(cell);
+
+        /* Figure out the capacity of each cell */
         capacity = MPIDI_POSIX_EAGER_IQUEUE_CELL_CAPACITY(transport);
         available = capacity;
 
+        /* If this is the beginning of the message, mark it as the head. Otherwise it will be the
+         * tail. */
         if (*msg_hdr) {
             cell->am_header = **msg_hdr;
             *msg_hdr = NULL;    /* completed header copy */
@@ -61,9 +74,20 @@ MPIDI_POSIX_eager_send(int grank,
             cell->type = MPIDI_POSIX_EAGER_IQUEUE_CELL_TYPE_TAIL;
         }
 
+        /* Pack the data into the cells */
         iov_done = 0;
         for (i = 0; i < *iov_num; i++) {
-            if (unlikely(available < (*iov)[i].iov_len)) {
+            /* Optimize for the case where the message will fit into the cell. */
+            if (likely(available >= (*iov)[i].iov_len)) {
+                memcpy(payload, (*iov)[i].iov_base, (*iov)[i].iov_len);
+
+                payload += (*iov)[i].iov_len;
+                available -= (*iov)[i].iov_len;
+
+                iov_done++;
+            } else {
+                /* If the message won't fit, put as much as we can and update the iovec for the next
+                 * time around. */
                 memcpy(payload, (*iov)[i].iov_base, available);
 
                 (*iov)[i].iov_base = (char *) (*iov)[i].iov_base + available;
@@ -73,37 +97,40 @@ MPIDI_POSIX_eager_send(int grank,
 
                 break;
             }
-
-            memcpy(payload, (*iov)[i].iov_base, (*iov)[i].iov_len);
-
-            payload += (*iov)[i].iov_len;
-            available -= (*iov)[i].iov_len;
-
-            iov_done++;
         }
 
         cell->payload_size = capacity - available;
 
+        /* Move the flag to indicate the head. */
         do {
             prev = terminal->head;
             cell->prev = prev;
             OPA_compiler_barrier();
         } while (((uintptr_t) (unsigned int *)
-                  OPA_cas_ptr((OPA_ptr_t *) & terminal->head, (void *) prev,
-                              (void *) handle) != prev));
+                  /* Swaps the head of the terminal with the current handle if the previous head has
+                   * now been consumed. Continues until we swap out the prev pointer. */
+                  OPA_cas_ptr((OPA_ptr_t *) & terminal->head, (void *) prev, (void *) handle)
+                  != prev));
 
+        /* Update the user counter for number of iovecs left */
         *iov_num -= iov_done;
 
+        /* Check to see if we finished all of the iovecs that came from the caller. If not, update
+         * the iov pointer. If so, set it to NULL. Either way, the caller will know the status of
+         * the operation from the value of iov. */
         if (*iov_num) {
-            *iov = &((*iov)[iov_done]); /* Rewind iov array */
+            *iov = &((*iov)[iov_done]);
         } else {
             *iov = NULL;
         }
 
         return MPIDI_POSIX_OK;
     }
-
-    return MPIDI_POSIX_NOK;
+    /* If a cell wasn't available, let the caller know that we weren't able to send the message
+     * immediately. */
+    else {
+        return MPIDI_POSIX_NOK;
+    }
 }
 
 #endif /* POSIX_EAGER_IQUEUE_SEND_H_INCLUDED */

@@ -8,6 +8,15 @@
  *  to Argonne National Laboratory subject to Software Grant and Corporate
  *  Contributor License Agreement dated February 8, 2012.
  */
+
+/*
+ * The POSIX shared memory module uses the CH4-fallback active message implementation for tracking
+ * requests and performing message matching. This is because these functions are always implemented
+ * in software, therefore duplicating the code to perform the matching is a bad idea. In all of
+ * these functions, we call back up to the fallback code to start the process of sending the
+ * message.
+ */
+
 #ifndef POSIX_SEND_H_INCLUDED
 #define POSIX_SEND_H_INCLUDED
 

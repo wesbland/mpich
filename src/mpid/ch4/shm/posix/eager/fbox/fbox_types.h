@@ -38,13 +38,16 @@ typedef struct MPIDI_POSIX_eager_fbox_control {
     MPIDU_shm_seg_t memory;
     MPIDU_shm_seg_info_t *seg;
 
-    int num_seg;
+    int num_seg;                /* XXX - Is this necessary? It seems like a holdover from the CH3 fastbox implementation. */
 
-    MPIDI_POSIX_fbox_arrays_t mailboxes;
+    MPIDI_POSIX_fbox_arrays_t mailboxes;        /* The array of buffers that make up the total collection
+                                                 * of mailboxes */
 
     MPIDU_shm_barrier_t *barrier;
     void *barrier_region;
 
+    /* Keep track of all of the local processes in MPI_COMM_WORLD and what their original rank was
+     * in that communicator. */
     int num_local;
     int local_rank;
     int *local_ranks;

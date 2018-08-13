@@ -5,6 +5,12 @@
  *
  */
 
+/*
+ * If inlining is turned off, this file will be used to call into the shared memory module. It will
+ * use the function pointer structure to call the appropriate functions rather than directly
+ * inlining them.
+ */
+
 #ifndef SHM_IMPL_H_INCLUDED
 #define SHM_IMPL_H_INCLUDED
 

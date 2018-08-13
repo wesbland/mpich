@@ -32,7 +32,8 @@ MPIDI_POSIX_eager_send(int grank,
     size_t fbox_payload_size = MPIDI_POSIX_FBOX_DATA_LEN;
     size_t fbox_payload_size_left = MPIDI_POSIX_FBOX_DATA_LEN;
 
-    /* Check if the fastbox is already full and if so, delay */
+    /* Check if the fastbox is already full and if so, return to the caller, which will cause this
+     * message to be queued. */
     if (!is_blocking && fbox_out->flag) {
         return MPIDI_POSIX_NOK;
     }
@@ -41,6 +42,8 @@ MPIDI_POSIX_eager_send(int grank,
 
     fbox_out->is_header = 0;
 
+    /* If there is a header, put that in the fastbox first and account for that in the remaining
+     * size. */
     if (*msg_hdr) {
         *((MPIDI_POSIX_am_header_t *) fbox_payload_ptr) = **msg_hdr;
 
@@ -52,6 +55,7 @@ MPIDI_POSIX_eager_send(int grank,
         fbox_out->is_header = 1;
     }
 
+    /* Copy all of the user data that will fit into the fastbox. */
     for (i = 0; i < *iov_num; i++) {
         if (unlikely(fbox_payload_size_left < (*iov)[i].iov_len)) {
             MPIR_Memcpy(fbox_payload_ptr, (*iov)[i].iov_base, fbox_payload_size_left);
@@ -95,10 +99,11 @@ MPIDI_POSIX_eager_send(int grank,
 
     OPA_compiler_barrier();
 
+    /* Update the flag to indicate that there is data in the box for the receiver. */
     fbox_out->flag = 1;
 
+    /* Update the number of iovecs left and the pointer to the next one. */
     *iov_num -= iov_done;
-
     if (*iov_num) {
         *iov = &((*iov)[iov_done]);     /* Rewind iov array */
     } else {

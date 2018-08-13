@@ -33,11 +33,9 @@ typedef struct {
     MPIU_buf_pool_t *am_buf_pool;
 
     /* Postponed queue */
-
     MPIDI_POSIX_am_request_header_t *postponed_queue;
 
     /* Active recv requests array */
-
     MPIR_Request **active_rreq;
 } MPIDI_POSIX_global_t;
 
