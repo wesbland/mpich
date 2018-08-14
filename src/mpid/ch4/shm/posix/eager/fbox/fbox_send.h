@@ -32,11 +32,8 @@ MPIDI_POSIX_eager_send(int grank,
     size_t fbox_payload_size = MPIDI_POSIX_FBOX_DATA_LEN;
     size_t fbox_payload_size_left = MPIDI_POSIX_FBOX_DATA_LEN;
 
-    while (fbox_out->flag && ((--spin_count) || is_blocking)) {
-        __asm__ __volatile__("pause":::"memory");
-    }
-
-    if (!spin_count && !is_blocking) {
+    /* Check if the fastbox is already full and if so, delay */
+    if (!is_blocking && fbox_out->flag) {
         return MPIDI_POSIX_NOK;
     }
 
