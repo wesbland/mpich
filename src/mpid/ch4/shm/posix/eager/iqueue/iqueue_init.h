@@ -13,6 +13,23 @@
 
 #include "iqueue_types.h"
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_CH4_SHM_POSIX_IQUEUE_NUM_CELLS
+      category    : CH4
+      type        : int
+      default     : 32
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        The number of cells used for the depth of the iqueue.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_POSIX_eager_init
 #undef FCNAME
@@ -57,7 +74,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_eager_init(int rank, int size)
 
     transport->local_rank = local_rank;
     transport->num_local = num_local;
-    transport->num_cells = MPIDI_POSIX_EAGER_IQUEUE_DEFAULT_NUMBER_OF_CELLS;
+    transport->num_cells = MPIR_CVAR_CH4_SHM_POSIX_IQUEUE_NUM_CELLS;
     transport->size_of_cell = MPIDI_POSIX_EAGER_IQUEUE_DEFAULT_CELL_SIZE;
 
     transport->local_ranks = local_ranks;
