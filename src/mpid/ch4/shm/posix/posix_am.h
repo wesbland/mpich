@@ -63,7 +63,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
 
     /* If the data being sent is not contiguous, pack it into a contiguous buffer using the datatype
      * engine. */
-    if (unlikely(!dt_contig)) {
+    if (unlikely(!dt_contig && (data_sz > 0))) {
         size_t segment_first;
         MPI_Aint last;
         struct MPIR_Segment *segment_ptr = NULL;
@@ -110,7 +110,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
     iov_num_left = 2;
 
     /* If there's no data to send, the second iov can be empty and doesn't need to be transfered. */
-    if (!data || !count) {
+    if (data_sz == 0) {
         iov_num_left = 1;
     }
 
@@ -192,7 +192,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_am_isend(int rank,
 
         curr_sreq_hdr->iov[1] = iov_left_ptr[1];
     } else if (iov_num_left == 1) {
-        if (!data || !count) {
+        if (data_sz == 0) {
             curr_sreq_hdr->iov[0].iov_base = curr_sreq_hdr->am_hdr;
             curr_sreq_hdr->iov[0].iov_len = curr_sreq_hdr->am_hdr_sz;
         } else {
